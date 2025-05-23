@@ -11,3 +11,9 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.react-flow__node-default {
+  border-radius: 50% !important;
+  width: 50px;   /* adjust size as you like */
+  height: 50px;  /* adjust size as you like */
+}
