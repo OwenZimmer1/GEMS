@@ -1,3 +1,4 @@
+// GraphEditor.tsx
 import React from 'react';
 import {
   ReactFlow,
@@ -13,23 +14,26 @@ import {
   useReactFlow,
 } from '@xyflow/react';
 
-type GraphEditorProps<NodeDataType extends Record<string, unknown>> = {
-  nodes: Node<NodeDataType>[];
-  setNodes: React.Dispatch<React.SetStateAction<Node<NodeDataType>[]>>;
+// define exactly what each node's data looks like
+type NodeData = { label: string };
+
+type GraphEditorProps = {
+  nodes: Node<NodeData>[];
+  setNodes: React.Dispatch<React.SetStateAction<Node<NodeData>[]>>;
   edges: Edge[];
   setEdges: React.Dispatch<React.SetStateAction<Edge[]>>;
 };
 
-export function GraphEditor<NodeDataType extends Record<string, unknown>>({
+export function GraphEditor({
   nodes,
   setNodes,
   edges,
   setEdges,
-}: GraphEditorProps<NodeDataType>) {
+}: GraphEditorProps) {
   const reactFlowInstance = useReactFlow();
 
   const onNodesChange: OnNodesChange = (changes) =>
-    setNodes((nds) => applyNodeChanges(changes, nds) as Node<NodeDataType>[]);
+    setNodes((nds) => applyNodeChanges(changes, nds) as Node<NodeData>[]);
 
   const onEdgesChange: OnEdgesChange = (changes) =>
     setEdges((eds) => applyEdgeChanges(changes, eds));
@@ -40,35 +44,37 @@ export function GraphEditor<NodeDataType extends Record<string, unknown>>({
       { ...params, id: `${params.source}-${params.target}` },
     ]);
 
-  // Handle drag over - must preventDefault to allow drop
-  const onDragOver = (event: React.DragEvent) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+  // allow drops
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
   };
 
-  // Handle drop - create new node at drop position
-  const onDrop = (event: React.DragEvent) => {
-    event.preventDefault();
+  // handle drop → add new node
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const bounds = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+    const type = e.dataTransfer.getData('application/reactflow');
+    if (!type) return;
 
-    const reactFlowBounds = event.currentTarget.getBoundingClientRect();
-    const type = event.dataTransfer.getData('application/reactflow');
+    // screen coords
+    const dropX = e.clientX - bounds.left;
+    const dropY = e.clientY - bounds.top;
 
-    if (!type) {
-      return;
-    }
+    // pan & zoom
+    const { x: panX, y: panY, zoom } = reactFlowInstance.getViewport();
 
-    // Calculate position inside ReactFlow viewport coordinates
-    const position = reactFlowInstance.project({
-      x: event.clientX - reactFlowBounds.left,
-      y: event.clientY - reactFlowBounds.top,
-    });
+    // convert to canvas coords
+    const position = {
+      x: dropX / zoom - panX,
+      y: dropY / zoom - panY,
+    };
 
-    // Create a new node — adjust data shape as needed
-    const newNode: Node<NodeDataType> = {
-      id: `${+new Date()}`, // unique id based on timestamp
+    const newNode: Node<NodeData> = {
+      id: `${Date.now()}`,
       type,
       position,
-      data: { label: `New node` } as NodeDataType,
+      data: { label: `Node ${nodes.length + 1}` },
     };
 
     setNodes((nds) => nds.concat(newNode));

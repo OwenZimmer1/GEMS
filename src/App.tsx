@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Node, Edge } from '@xyflow/react';
-import { GraphEditor } from './components/GraphEditor';  // now generic
+import { GraphEditor } from './components/GraphEditor';
 import { ControlsPanel } from './components/ControlsPanel';
 import { Sidebar } from './components/Sidebar';
 import { computeDominatingSet, Graph } from './algorithms/dominatingSet';
@@ -31,7 +31,10 @@ export default function App() {
 
   const addEdge = () => {
     if (sourceNode && targetNode && sourceNode !== targetNode) {
-      setEdges([...edges, { id: `${sourceNode}-${targetNode}`, source: sourceNode, target: targetNode }]);
+      setEdges([
+        ...edges,
+        { id: `${sourceNode}-${targetNode}`, source: sourceNode, target: targetNode },
+      ]);
       setSourceNode('');
       setTargetNode('');
     }
@@ -40,9 +43,7 @@ export default function App() {
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
       <Sidebar />
-      <div
-        style={{ flexGrow: 1, padding: 10, display: 'flex', flexDirection: 'column' }}
-      >
+      <div style={{ flexGrow: 1, padding: 10, display: 'flex', flexDirection: 'column' }}>
         <ControlsPanel onCompute={handleCompute} />
 
         <div style={{ marginBottom: 10 }}>
@@ -77,8 +78,7 @@ export default function App() {
           </button>
         </div>
 
-        {/* Pass the generic parameter NodeData to GraphEditor */}
-        <GraphEditor<NodeData>
+        <GraphEditor
           nodes={nodes}
           setNodes={setNodes}
           edges={edges}
