@@ -1,17 +1,23 @@
+// src/components/ControlsPanel.tsx
 import React from 'react';
 
 type Props = {
   onCompute: () => void;
-  onSave?: () => void;  // optional save callback
-  onLoad?: () => void;  // optional load callback
+  onReset?: () => void;
+  onSave?: () => void;
+  onLoad?: () => void;
 };
 
- 
-
-export function ControlsPanel({ onCompute, onSave, onLoad }: Props) {
+export function ControlsPanel({ onCompute, onReset, onSave, onLoad }: Props) {
   return (
     <div style={{ marginBottom: 20 }}>
       <button onClick={onCompute}>Compute Dominating Set</button>
+
+      {onReset && (
+        <button onClick={onReset} style={{ marginLeft: 10 }}>
+          Reset Dominating Set
+        </button>
+      )}
 
       {onSave && (
         <button onClick={onSave} style={{ marginLeft: 10 }}>

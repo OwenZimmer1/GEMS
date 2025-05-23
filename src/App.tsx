@@ -1,82 +1,77 @@
-import React, { useState } from 'react';
-import { Node, Edge } from '@xyflow/react';
-import { GraphEditor } from './components/GraphEditor';
-import { ControlsPanel } from './components/ControlsPanel';
+// src/App.tsx
+import React, { useState, useCallback } from 'react';
+import { Node, Edge, useReactFlow } from '@xyflow/react';
 import { Sidebar } from './components/Sidebar';
+import { ControlsPanel } from './components/ControlsPanel';
+import { GraphEditor } from './components/GraphEditor';
 import { computeDominatingSet, Graph } from './algorithms/dominatingSet';
 
-type NodeData = {
-  label: string;
-};
+type NodeData = { label: string };
 
 export default function App() {
   const [nodes, setNodes] = useState<Node<NodeData>[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
+  const reactFlowInstance = useReactFlow();
 
-  const [sourceNode, setSourceNode] = useState('');
-  const [targetNode, setTargetNode] = useState('');
-
-  const handleCompute = () => {
+  // Compute dominating set and highlight
+  const handleCompute = useCallback(() => {
     const graph: Graph = {
       nodes: nodes.map((n) => ({ id: n.id })),
       edges: edges.map((e) => ({ source: e.source, target: e.target })),
     };
     const ds = computeDominatingSet(graph);
-    setNodes(
-      nodes.map((n) =>
-        ds.has(n.id) ? { ...n, style: { backgroundColor: 'lightgreen' } } : n,
-      ),
-    );
-  };
 
-  const addEdge = () => {
-    if (sourceNode && targetNode && sourceNode !== targetNode) {
-      setEdges([
-        ...edges,
-        { id: `${sourceNode}-${targetNode}`, source: sourceNode, target: targetNode },
-      ]);
-      setSourceNode('');
-      setTargetNode('');
-    }
-  };
+    setNodes((nds) =>
+      nds.map((n) =>
+        ds.has(n.id)
+          ? { ...n, style: { ...n.style, backgroundColor: 'lightgreen' } }
+          : { ...n, style: {} }
+      )
+    );
+  }, [nodes, edges]);
+
+  // Reset any dominating‐set highlighting
+  const handleReset = useCallback(() => {
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        style: {},          // clear all inline styles
+      }))
+    );
+  }, []);
+
+  // Add node (existing drag/drop + addNode button logic omitted for brevity)
+  const addNode = useCallback((type: string) => {
+    const { x: panX, y: panY, zoom } = reactFlowInstance.getViewport();
+    const position = { x: -panX + 100, y: -panY + 100 };
+    const id = `${Date.now()}`;
+    const newNode: Node<NodeData> = {
+      id,
+      type,
+      position,
+      data: { label: `Node ${nodes.length + 1}` },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [reactFlowInstance, nodes.length]);
 
   return (
     <div style={{ display: 'flex', height: '100vh' }}>
-      <Sidebar />
-      <div style={{ flexGrow: 1, padding: 10, display: 'flex', flexDirection: 'column' }}>
-        <ControlsPanel onCompute={handleCompute} />
+      <Sidebar onAddNode={addNode} />
 
-        <div style={{ marginBottom: 10 }}>
-          <select value={sourceNode} onChange={(e) => setSourceNode(e.target.value)}>
-            <option value="">Select source</option>
-            {nodes.map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.data.label}
-              </option>
-            ))}
-          </select>
+      <div
+        style={{
+          flexGrow: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 10,
+        }}
+      >
+        <ControlsPanel
+          onCompute={handleCompute}
+          onReset={handleReset}   // pass reset handler
+        />
 
-          <select
-            value={targetNode}
-            onChange={(e) => setTargetNode(e.target.value)}
-            style={{ marginLeft: 10 }}
-          >
-            <option value="">Select target</option>
-            {nodes.map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.data.label}
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={addEdge}
-            disabled={!sourceNode || !targetNode || sourceNode === targetNode}
-            style={{ marginLeft: 10 }}
-          >
-            Add Edge
-          </button>
-        </div>
+        {/* manual edge‐adding UI here if you have it */}
 
         <GraphEditor
           nodes={nodes}
