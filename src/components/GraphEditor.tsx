@@ -165,6 +165,33 @@ export function GraphEditor({
     setNodes((nds) => nds.concat(newNode));
   };
 
+  const onNodeClick = useCallback(
+    (_: React.MouseEvent, clickedNode: Node<NodeData>) => {
+      // build adjacency set of neighbor IDs
+      const neighbors = new Set<string>();
+      edges.forEach((e) => {
+        if (e.source === clickedNode.id) neighbors.add(e.target);
+        if (e.target === clickedNode.id) neighbors.add(e.source);
+      });
+
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id === clickedNode.id) {
+            // clicked node → red
+            return { ...n, style: { ...n.style, backgroundColor: 'red' } };
+          } else if (neighbors.has(n.id)) {
+            // neighbor → grey
+            return { ...n, style: { ...n.style, backgroundColor: 'grey' } };
+          } else {
+            // otherwise clear
+            return { ...n, style: {} };
+          }
+        })
+      );
+    },
+    [edges, setNodes]
+  );
+
   return (
     <div
       style={{ width: '100%', height: '90vh' }}
@@ -181,6 +208,7 @@ export function GraphEditor({
         onConnect={onConnect}
         onNodesDelete={onNodesDelete}
         onEdgesDelete={onEdgesDelete}
+        onNodeClick={onNodeClick}
         fitView
         selectionOnDrag
       >
